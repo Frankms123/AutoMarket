@@ -1,62 +1,52 @@
 package util
+
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Environment
-import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.*
 
 object ImageUtils {
 
-    fun createImageFile(context: Context): File {
-        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        return File.createTempFile(
-            "VEHICULO_${timeStamp}_",
-            ".jpg",
-            storageDir
-        )
-    }
-
-    fun getUriForFile(context: Context, file: File): Uri {
-        return FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
-    }
-
-    fun saveImageToInternalStorage(context: Context, uri: Uri): String? {
+    /**
+     * Guarda una imagen desde una Uri a un archivo permanente en el almacenamiento interno.
+     * @param context Contexto de la aplicación.
+     * @param uri La Uri de la imagen a guardar.
+     * @return La ruta (path) del archivo guardado, o null si falla.
+     */
+    fun guardarImagenEnStorage(context: Context, uri: Uri): String? {
         return try {
-            val inputStream = context.contentResolver.openInputStream(uri)
-            val bitmap = BitmapFactory.decodeStream(inputStream)
-            inputStream?.close()
+            // Usar un nombre de archivo único basado en el tiempo
+            val fileName = "IMG_${System.currentTimeMillis()}.jpg"
+            val destinationFile = File(context.filesDir, fileName)
 
-            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val filename = "vehiculo_$timeStamp.jpg"
-            val file = File(context.filesDir, filename)
-
-            FileOutputStream(file).use { out ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 85, out)
+            // Copiar el contenido de la Uri al archivo de destino
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                FileOutputStream(destinationFile).use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
             }
-
-            file.absolutePath
+            destinationFile.absolutePath
         } catch (e: Exception) {
             e.printStackTrace()
             null
         }
     }
 
-    fun deleteImage(imagePath: String?) {
-        if (imagePath != null) {
+    /**
+     * Elimina un archivo de imagen del almacenamiento interno.
+     * @param imagePath La ruta del archivo a eliminar.
+     */
+    fun eliminarImagen(imagePath: String): Boolean {
+        return try {
             val file = File(imagePath)
             if (file.exists()) {
                 file.delete()
+            } else {
+                false
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
         }
     }
 }

@@ -1,6 +1,6 @@
 package Data
 
-import entity.Vehiculo
+import Entity.Vehiculo
 import kotlinx.coroutines.flow.Flow
 
 interface DataManager {

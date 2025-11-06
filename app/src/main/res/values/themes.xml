@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.AutoMarket" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.AutoMarket" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Aquí puedes añadir personalizaciones de color, etc. si lo necesitas -->
+    </style>
+
 </resources>

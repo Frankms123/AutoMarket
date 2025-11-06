@@ -1,93 +1,60 @@
+package controller
+
 import android.content.Context
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.asLiveData
-import Data.MemoryDataManager
-import entity.Vehiculo
-import kotlinx.coroutines.CoroutineScope
+import Data.AppDatabase
+import Entity.ResultadoOperacion
+import Entity.Vehiculo
+import Entity.VehiculoDao
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
 class VehiculoController(context: Context) {
 
-    private val dataManager = MemoryDataManager(context)
-    private val scope = CoroutineScope(Dispatchers.Main)
+    private val vehiculoDao: VehiculoDao = AppDatabase.getDatabase(context).vehiculoDao()
 
-    fun getAllVehiculos(): LiveData<List<Vehiculo>> {
-        return dataManager.getAllVehiculos().asLiveData()
+    fun obtenerTodosLosVehiculos(): Flow<List<Vehiculo>> {
+        return vehiculoDao.getAllVehiculos()
     }
 
-    fun searchVehiculos(query: String): LiveData<List<Vehiculo>> {
-        return dataManager.searchVehiculos(query).asLiveData()
+    fun buscarVehiculos(query: String): Flow<List<Vehiculo>> {
+        return vehiculoDao.searchVehiculos(query)
     }
 
-    fun getVehiculoById(id: Long, callback: (Vehiculo?) -> Unit) {
-        scope.launch {
-            val vehiculo = withContext(Dispatchers.IO) {
-                dataManager.getVehiculoById(id)
-            }
-            callback(vehiculo)
+    suspend fun obtenerVehiculoPorId(id: Long): ResultadoOperacion<Vehiculo?> = withContext(Dispatchers.IO) {
+        try {
+            vehiculoDao.getVehiculoById(id)?.let {
+                ResultadoOperacion.Exito(it)
+            } ?: ResultadoOperacion.Error("Vehículo no encontrado")
+        } catch (e: Exception) {
+            ResultadoOperacion.Error("Error al obtener el vehículo: ${e.message}", e)
         }
     }
 
-    fun insertVehiculo(vehiculo: Vehiculo, callback: (Result<Long>) -> Unit) {
-        scope.launch {
-            try {
-                val id = withContext(Dispatchers.IO) {
-                    dataManager.insertVehiculo(vehiculo)
-                }
-                callback(Result.success(id))
-            } catch (e: Exception) {
-                callback(Result.failure(e))
-            }
+    suspend fun crearVehiculo(vehiculo: Vehiculo): ResultadoOperacion<Long> = withContext(Dispatchers.IO) {
+        try {
+            val newId = vehiculoDao.insertVehiculo(vehiculo)
+            ResultadoOperacion.Exito(newId)
+        } catch (e: Exception) {
+            ResultadoOperacion.Error("Error al crear el vehículo: ${e.message}", e)
         }
     }
 
-    fun updateVehiculo(vehiculo: Vehiculo, callback: (Result<Unit>) -> Unit) {
-        scope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    dataManager.updateVehiculo(vehiculo)
-                }
-                callback(Result.success(Unit))
-            } catch (e: Exception) {
-                callback(Result.failure(e))
-            }
+    suspend fun actualizarVehiculo(vehiculo: Vehiculo): ResultadoOperacion<Unit> = withContext(Dispatchers.IO) {
+        try {
+            vehiculoDao.updateVehiculo(vehiculo)
+            ResultadoOperacion.Exito(Unit)
+        } catch (e: Exception) {
+            ResultadoOperacion.Error("Error al actualizar el vehículo: ${e.message}", e)
         }
     }
 
-    fun deleteVehiculo(vehiculo: Vehiculo, callback: (Result<Unit>) -> Unit) {
-        scope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    dataManager.deleteVehiculo(vehiculo)
-                }
-                callback(Result.success(Unit))
-            } catch (e: Exception) {
-                callback(Result.failure(e))
-            }
-        }
-    }
-
-    fun getVehiculosCount(callback: (Int) -> Unit) {
-        scope.launch {
-            val count = withContext(Dispatchers.IO) {
-                dataManager.getVehiculosCount()
-            }
-            callback(count)
-        }
-    }
-
-    fun deleteAllVehiculos(callback: (Result<Unit>) -> Unit) {
-        scope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    dataManager.deleteAllVehiculos()
-                }
-                callback(Result.success(Unit))
-            } catch (e: Exception) {
-                callback(Result.failure(e))
-            }
+    suspend fun eliminarVehiculo(vehiculo: Vehiculo): ResultadoOperacion<Unit> = withContext(Dispatchers.IO) {
+        try {
+            vehiculoDao.deleteVehiculo(vehiculo)
+            ResultadoOperacion.Exito(Unit)
+        } catch (e: Exception) {
+            ResultadoOperacion.Error("Error al eliminar el vehículo: ${e.message}", e)
         }
     }
 }

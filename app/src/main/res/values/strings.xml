@@ -1,3 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AutoMarket</string>
+
+    <!-- GENERAL -->
+    <string name="app_name">Auto Market</string>
+
+    <!-- TÍTULOS DE PANTALLAS -->
+    <string name="titulo_lista">Vehículos en Venta</string>
+    <string name="titulo_detalle">Detalles del Vehículo</string>
+    <string name="titulo_agregar">Agregar Vehículo</string>
+    <string name="titulo_editar">Editar Vehículo</string>
+
+    <!-- BOTONES -->
+    <string name="btn_agregar">Agregar</string>
+    <string name="btn_guardar">Guardar</string>
+    <string name="btn_cancelar">Cancelar</string>
+    <string name="btn_editar">Editar</string>
+    <string name="btn_eliminar">Eliminar</string>
+    <string name="btn_seleccionar_imagen">Seleccionar Imagen</string>
+    <string name="btn_buscar">Buscar</string>
+    <string name="btn_filtrar">Filtrar</string>
+    <string name="btn_aceptar">Aceptar</string>
+    <string name="btn_volver">Volver</string>
+    <string name="btn_compartir">Compartir</string>
+
+    <!-- LABELS / ETIQUETAS -->
+    <string name="label_marca">Marca</string>
+    <string name="label_modelo">Modelo</string>
+    <string name="label_anio">Año</string>
+    <string name="label_precio">Precio</string>
+    <string name="label_tipo">Tipo de Vehículo</string>
+    <string name="label_kilometraje">Kilometraje</string>
+    <string name="label_transmision">Transmisión</string>
+    <string name="label_estado">Estado</string>
+    <string name="label_descripcion">Descripción</string>
+    <string name="label_imagen">Imagen del Vehículo</string>
+    <string name="label_fecha_publicacion">Fecha de Publicación</string>
+
+    <!-- HINTS / SUGERENCIAS -->
+    <string name="hint_marca">Ej: Toyota, Honda, Ford…</string>
+    <string name="hint_modelo">Ej: Corolla, Civic, Focus…</string>
+    <string name="hint_anio">Ej: 2020</string>
+    <string name="hint_precio">Ej: 15000.00</string>
+    <string name="hint_kilometraje">Ej: 50000</string>
+    <string name="hint_descripcion">Escribe una descripción detallada del vehículo…</string>
+    <string name="hint_buscar">Buscar por marca o modelo…</string>
+
+    <!-- ARRAYS -->
+    <string-array name="tipos_vehiculo">
+        <item>Sedán</item>
+        <item>SUV</item>
+        <item>Pickup</item>
+        <item>Deportivo</item>
+        <item>Hatchback</item>
+        <item>Van</item>
+    </string-array>
+    <string-array name="tipos_transmision">
+        <item>Automático</item>
+        <item>Manual</item>
+    </string-array>
+    <string-array name="estados_vehiculo">
+        <item>Nuevo</item>
+        <item>Usado</item>
+    </string-array>
+    <string-array name="opciones_imagen">
+        <item>Tomar foto</item>
+        <item>Elegir de galería</item>
+        <item>Eliminar foto</item>
+    </string-array>
+
+    <!-- ESTADOS VACÍOS -->
+    <string name="empty_state_titulo">No hay vehículos</string>
+    <string name="empty_state_mensaje">Aún no has agregado ningún vehículo.\nToca el botón + para comenzar.</string>
+    <string name="empty_state_busqueda">No se encontraron vehículos</string>
+    <string name="empty_state_busqueda_mensaje">No hay resultados para tu búsqueda.\nIntenta con otros términos.</string>
+    <string name="empty_state_filtro">Sin resultados</string>
+    <string name="empty_state_filtro_mensaje">No hay vehículos que coincidan con los filtros seleccionados.</string>
+
+    <!-- MENSAJES DE ÉXITO -->
+    <string name="msg_vehiculo_guardado">Vehículo guardado correctamente</string>
+    <string name="msg_vehiculo_actualizado">Vehículo actualizado correctamente</string>
+    <string name="msg_vehiculo_eliminado">Vehículo eliminado correctamente</string>
+    <string name="msg_imagen_guardada">Imagen guardada correctamente</string>
+    <string name="msg_imagen_eliminada">Imagen eliminada</string>
+
+    <!-- MENSAJES DE ERROR -->
+    <string name="error_campos_vacios">Por favor completa todos los campos</string>
+    <string name="error_marca_invalida">Ingresa una marca válida</string>
+    <string name="error_modelo_invalido">Ingresa un modelo válido</string>
+    <string name="error_anio_invalido">El año debe estar entre 1900 y 2025</string>
+    <string name="error_precio_invalido">Ingresa un precio válido mayor a 0</string>
+    <string name="error_kilometraje_invalido">Ingresa un kilometraje válido</string>
+    <string name="error_descripcion_invalida">La descripción debe tener al menos 10 caracteres</string>
+    <string name="error_cargar_vehiculo">Error al cargar el vehículo</string>
+    <string name="error_guardar_vehiculo">Error al guardar el vehículo</string>
+    <string name="error_eliminar_vehiculo">Error al eliminar el vehículo</string>
+    <string name="error_cargar_imagen">Error al cargar la imagen</string>
+    <string name="error_guardar_imagen">Error al guardar la imagen</string>
+    <string name="error_permiso_camara">Permiso de cámara denegado</string>
+    <string name="error_permiso_almacenamiento">Permiso de almacenamiento denegado</string>
+    <string name="error_abrir_camara">Error al abrir la cámara</string>
+    <string name="error_seleccionar_imagen">Error al seleccionar la imagen</string>
+    <string name="error_general">Ocurrió un error inesperado</string>
+
+    <!-- DIÁLOGOS - CONFIRMACIONES -->
+    <string name="dialogo_eliminar_titulo">Eliminar vehículo</string>
+    <string name="dialogo_eliminar_mensaje">¿Estás seguro de que deseas eliminar este vehículo?\n\nEsta acción no se puede deshacer.</string>
+    <string name="dialogo_eliminar_confirmar">Eliminar</string>
+    <string name="dialogo_eliminar_cancelar">Cancelar</string>
+    <string name="dialogo_salir_titulo">Descartar cambios</string>
+    <string name="dialogo_salir_mensaje">¿Deseas salir sin guardar los cambios?</string>
+    <string name="dialogo_salir_confirmar">Salir</string>
+    <string name="dialogo_salir_cancelar">Continuar editando</string>
+    <string name="dialogo_permisos_titulo">Permisos necesarios</string>
+    <string name="dialogo_permisos_camara">Se requiere permiso de cámara para tomar fotos del vehículo.</string>
+    <string name="dialogo_permisos_almacenamiento">Se requiere permiso de almacenamiento para acceder a las fotos.</string>
+
+    <!-- FILTROS Y ORDENAMIENTO -->
+    <string name="titulo_filtros">Filtrar vehículos</string>
+    <string name="filtro_todos">Todos</string>
+    <string name="filtro_tipo">Filtrar por tipo</string>
+    <string name="filtro_estado">Filtrar por estado</string>
+    <string name="filtro_transmision">Filtrar por transmisión</string>
+    <string name="filtro_precio">Filtrar por precio</string>
+    <string name="filtro_anio">Filtrar por año</string>
+    <string name="filtro_limpiar">Limpiar filtros</string>
+    <string name="filtro_aplicar">Aplicar filtros</string>
+    <string name="ordenar_por">Ordenar por</string>
+    <string name="ordenar_fecha_reciente">Más recientes</string>
+    <string name="ordenar_fecha_antigua">Más antiguos</string>
+    <string name="ordenar_precio_menor">Precio: menor a mayor</string>
+    <string name="ordenar_precio_mayor">Precio: mayor a menor</string>
+    <string name="ordenar_anio_nuevo">Año: más nuevo</string>
+    <string name="ordenar_anio_viejo">Año: más antiguo</string>
+    <string name="ordenar_kilometraje_menor">Kilometraje: menor a mayor</string>
+    <string name="ordenar_kilometraje_mayor">Kilometraje: mayor a menor</string>
+
+    <!-- MENÚ -->
+    <string name="menu_buscar">Buscar</string>
+    <string name="menu_filtrar">Filtrar</string>
+    <string name="menu_ordenar">Ordenar</string>
+    <string name="menu_editar">Editar</string>
+    <string name="menu_eliminar">Eliminar</string>
+    <string name="menu_compartir">Compartir</string>
+    <string name="menu_configuracion">Configuración</string>
+    <string name="menu_acerca_de">Acerca de</string>
+
+    <!-- DETALLES DEL VEHÍCULO -->
+    <string name="detalle_caracteristicas">Características</string>
+    <string name="detalle_descripcion">Descripción</string>
+    <string name="detalle_anio_label">Año:</string>
+    <string name="detalle_tipo_label">Tipo:</string>
+    <string name="detalle_kilometraje_label">Kilometraje:</string>
+    <string name="detalle_transmision_label">Transmisión:</string>
+    <string name="detalle_publicado">Publicado:</string>
+
+    <!-- ACCESIBILIDAD (Content Descriptions) -->
+    <string name="cd_imagen_vehiculo">Imagen del vehículo</string>
+    <string name="cd_boton_agregar">Agregar nuevo vehículo</string>
+
 </resources>

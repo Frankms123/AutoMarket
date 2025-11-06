@@ -1,11 +1,11 @@
 package Data
-import entity.Vehiculo
+
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import entity.VehiculoDao
-
+import Entity.Vehiculo
+import Entity.VehiculoDao
 
 @Database(
     entities = [Vehiculo::class],
@@ -13,9 +13,12 @@ import entity.VehiculoDao
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
+
     abstract fun vehiculoDao(): VehiculoDao
 
     companion object {
+        private const val DATABASE_NAME = "automarket_database"
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -24,9 +27,10 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "automarket_database"
+                    DATABASE_NAME
                 )
-                    .fallbackToDestructiveMigration(false)
+                    .fallbackToDestructiveMigration(true)
+                    .allowMainThreadQueries()
                     .build()
                 INSTANCE = instance
                 instance
