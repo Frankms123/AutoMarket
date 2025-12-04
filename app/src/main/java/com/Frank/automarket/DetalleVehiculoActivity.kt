@@ -4,135 +4,141 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
+import com.Frank.automarket.data.network.ApiClient
+import com.Frank.automarket.data.network.model.VehiculoDto
+import com.Frank.automarket.data.session.SessionManager
 import com.Frank.automarket.databinding.ActivityDetalleVehiculoBinding
-import Entity.ResultadoOperacion
-import Entity.Vehiculo
-import controller.VehiculoController
+import com.Frank.automarket.ui.detail.DetalleUiState
+import com.Frank.automarket.ui.detail.DetalleVehiculoViewModel
 import util.*
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.io.File
 
 class DetalleVehiculoActivity : AppCompatActivity() {
-    
+
     private lateinit var binding: ActivityDetalleVehiculoBinding
-    private lateinit var controller: VehiculoController
-    private var vehiculoActual: Vehiculo? = null
-    private var vehiculoId: Long = -1
-    
+    private val viewModel: DetalleVehiculoViewModel by viewModels()
+    private lateinit var sessionManager: SessionManager
+    private var vehiculoId: Int = -1
+    private var vehiculoActual: VehiculoDto? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityDetalleVehiculoBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        
+        sessionManager = SessionManager(this)
+
         setupToolbar()
-        setupController()
         obtenerVehiculoId()
-        cargarVehiculo()
+        observeViewModel()
+
+        if (vehiculoId != -1) {
+            viewModel.cargarDetallesVehiculo(vehiculoId)
+        }
     }
-    
+
     private fun setupToolbar() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.apply {
             title = getString(R.string.titulo_detalle)
             setDisplayHomeAsUpEnabled(true)
-            setDisplayShowHomeEnabled(true)
         }
     }
-    
-    private fun setupController() {
-        controller = VehiculoController(this)
-    }
-    
+
     private fun obtenerVehiculoId() {
-        vehiculoId = intent.getLongExtra(MainActivity.EXTRA_VEHICULO_ID, -1)
-        
-        if (vehiculoId == -1L) {
+        vehiculoId = intent.getIntExtra(EXTRA_VEHICULO_ID, -1)
+        if (vehiculoId == -1) {
             toast(getString(R.string.error_cargar_vehiculo))
             finish()
         }
     }
-    
-    private fun cargarVehiculo() {
+
+    private fun observeViewModel() {
         lifecycleScope.launch {
-            when (val resultado = controller.obtenerVehiculoPorId(vehiculoId)) {
-                is ResultadoOperacion.Exito -> {
-                    resultado.data?.let { vehiculo ->
-                        vehiculoActual = vehiculo
-                        mostrarDatosVehiculo(vehiculo)
-                    } ?: run {
-                        toast(getString(R.string.error_cargar_vehiculo))
+            viewModel.uiState.collectLatest {
+                when(it) {
+                    is DetalleUiState.Loading -> {
+                        // TODO: Mostrar un ProgressBar
+                    }
+                    is DetalleUiState.Success -> {
+                        vehiculoActual = it.vehiculo
+                        mostrarDatosVehiculo(it.vehiculo)
+                        invalidateOptionsMenu() // Invalida el menú para que onPrepareOptionsMenu se llame de nuevo
+                    }
+                    is DetalleUiState.Error -> {
+                        toast("Error: ${it.message}")
+                        finish()
+                    }
+                    is DetalleUiState.Deleted -> {
+                        toast(getString(R.string.msg_vehiculo_eliminado))
                         finish()
                     }
                 }
-                is ResultadoOperacion.Error -> {
-                    toast(resultado.mensaje)
-                    finish()
-                }
-                else -> { }
             }
         }
     }
-    
-    private fun mostrarDatosVehiculo(vehiculo: Vehiculo) {
+
+    private fun mostrarDatosVehiculo(vehiculo: VehiculoDto) {
         binding.apply {
-            tvTitulo.text = vehiculo.getTituloCompleto()
-            tvPrecio.text = vehiculo.getPrecioFormateado()
+            tvTitulo.text = "${vehiculo.marca} ${vehiculo.modelo}"
+            tvPrecio.text = FormatUtils.formatPrice(vehiculo.precio)
             tvEstado.text = vehiculo.estado
-            tvEstado.setBackgroundColor(
-                if (vehiculo.esNuevo()) getColor(R.color.badge_nuevo) else getColor(R.color.badge_usado)
-            )
-            
+
             tvAnio.text = vehiculo.anio.toString()
-            tvTipo.text = vehiculo.tipoVehiculo
-            tvKilometraje.text = vehiculo.getKilometrajeFormateado()
+            tvTipo.text = vehiculo.tipo
+            tvKilometraje.text = FormatUtils.formatKilometraje(vehiculo.kilometraje)
             tvTransmision.text = vehiculo.transmision
-            tvFechaPublicacion.text = vehiculo.fechaCreacion.formatAsDate()
             tvDescripcion.text = vehiculo.descripcion
             
-            cargarImagen(vehiculo)
+            if (vehiculo.imagenUrl != null) {
+                val fullImageUrl = ApiClient.BASE_URL.removeSuffix("/") + vehiculo.imagenUrl
+                Glide.with(this@DetalleVehiculoActivity)
+                    .load(fullImageUrl)
+                    .centerCrop()
+                    .placeholder(R.drawable.ic_car_placeholder)
+                    .into(ivVehiculo)
+            } else {
+                ivVehiculo.setImageResource(R.drawable.ic_car_placeholder)
+            }
         }
     }
-    
-    private fun cargarImagen(vehiculo: Vehiculo) {
-        if (vehiculo.tieneImagen()) {
-            val imageFile = File(vehiculo.imagenUri!!)
-            Glide.with(this@DetalleVehiculoActivity)
-                .load(imageFile)
-                .centerCrop()
-                .placeholder(R.drawable.ic_car_placeholder)
-                .error(R.drawable.ic_car_placeholder)
-                .into(binding.ivVehiculo)
-        } else {
-            binding.ivVehiculo.setImageResource(R.drawable.ic_car_placeholder)
-        }
-    }
-    
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_detalle, menu)
         return true
     }
-    
+
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        val esPropietario = vehiculoActual?.ownerId == sessionManager.fetchUserId()
+
+        menu.findItem(R.id.action_edit)?.isVisible = esPropietario
+        menu.findItem(R.id.action_delete)?.isVisible = esPropietario
+        
+        return super.onPrepareOptionsMenu(menu)
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> { finish(); true }
-            R.id.action_edit -> { 
-                val intent = Intent(this, FormularioVehiculoActivity::class.java).apply {
-                    putExtra(FormularioVehiculoActivity.EXTRA_VEHICULO_ID, vehiculoId)
-                    putExtra(FormularioVehiculoActivity.EXTRA_MODO_EDICION, true)
-                }
-                startActivity(intent)
-                true 
-            }
+            R.id.action_edit -> { irAEditar(); true }
             R.id.action_delete -> { mostrarDialogoEliminar(); true }
-            R.id.action_share -> { compartirVehiculo(); true }
+            R.id.action_share -> { /* TODO: Implementar compartir */ true }
             else -> super.onOptionsItemSelected(item)
         }
     }
-    
+
+    private fun irAEditar() {
+        val intent = Intent(this, FormularioVehiculoActivity::class.java).apply {
+            putExtra(FormularioVehiculoActivity.EXTRA_VEHICULO_ID, vehiculoId)
+        }
+        startActivity(intent)
+    }
+
     private fun mostrarDialogoEliminar() {
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.dialogo_eliminar_titulo)
@@ -141,40 +147,17 @@ class DetalleVehiculoActivity : AppCompatActivity() {
             .setNegativeButton(R.string.dialogo_eliminar_cancelar, null)
             .show()
     }
-    
+
     private fun eliminarVehiculo() {
-        vehiculoActual?.let { vehiculo ->
-            lifecycleScope.launch {
-                when (val resultado = controller.eliminarVehiculo(vehiculo)) {
-                    is ResultadoOperacion.Exito -> {
-                        toast(getString(R.string.msg_vehiculo_eliminado))
-                        finish()
-                    }
-                    is ResultadoOperacion.Error -> toast(resultado.mensaje)
-                    else -> { }
-                }
-            }
-        }
+        viewModel.eliminarVehiculo(vehiculoId)
     }
-    
-    private fun compartirVehiculo() {
-        vehiculoActual?.let { vehiculo ->
-            val textoCompartir = "¡Mira este ${vehiculo.getTituloCompleto()}! Precio: ${vehiculo.getPrecioFormateado()}"
-            
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_SUBJECT, "Vehículo en venta")
-                putExtra(Intent.EXTRA_TEXT, textoCompartir)
-            }
-            
-            startActivity(Intent.createChooser(intent, "Compartir vía"))
-        }
+
+    override fun onSupportNavigateUp(): Boolean {
+        onBackPressedDispatcher.onBackPressed()
+        return true
     }
-    
-    override fun onResume() {
-        super.onResume()
-        if (vehiculoId != -1L) {
-            cargarVehiculo()
-        }
+
+    companion object {
+        const val EXTRA_VEHICULO_ID = "vehiculo_id"
     }
 }

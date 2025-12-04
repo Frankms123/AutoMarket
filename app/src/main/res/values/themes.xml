@@ -2,7 +2,10 @@
 <resources>
 
     <style name="Theme.AutoMarket" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Aquí puedes añadir personalizaciones de color, etc. si lo necesitas -->
+        <!-- Tema principal de la aplicación -->
     </style>
+
+    <!-- Tema para actividades que no deben tener un ActionBar/Toolbar gestionado por el tema -->
+    <style name="Theme.AutoMarket.NoActionBar" parent="Theme.AutoMarket" />
 
 </resources>

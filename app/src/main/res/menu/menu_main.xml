@@ -19,6 +19,11 @@
         android:id="@+id/action_sort"
         android:icon="@android:drawable/ic_menu_sort_alphabetically"
         android:title="@string/menu_ordenar"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="never" />
+        
+    <item
+        android:id="@+id/action_logout"
+        android:title="@string/menu_logout"
+        app:showAsAction="never" />
 
 </menu>

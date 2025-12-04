@@ -1,48 +1,51 @@
 package com.Frank.automarket
 
 import android.Manifest
-import android.content.DialogInterface
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.ArrayAdapter
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
+import com.Frank.automarket.data.network.model.VehiculoDto
+import com.Frank.automarket.data.session.SessionManager
 import com.Frank.automarket.databinding.ActivityFormularioVehiculoBinding
-import Entity.ResultadoOperacion
-import Entity.Vehiculo
-import controller.VehiculoController
+import com.Frank.automarket.ui.form.FormularioUiState
+import com.Frank.automarket.ui.form.FormularioVehiculoViewModel
 import util.ImageUtils
-import util.ValidationUtils
 import util.toast
 import util.visible
 import util.gone
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.io.File
 
 class FormularioVehiculoActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityFormularioVehiculoBinding
-    private lateinit var controller: VehiculoController
+    private val viewModel: FormularioVehiculoViewModel by viewModels()
+    private lateinit var sessionManager: SessionManager
 
-    private var vehiculoId: Long = -1
-    private var modoEdicion: Boolean = false
+    private var vehiculoId: Int? = null
+    private var imageFile: File? = null
     private var imagenUri: Uri? = null
-    private var imagenPath: String? = null
 
+    // --- ActivityResultLaunchers ---
     private val tomarFotoLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         if (success) guardarImagenYMostrar()
     }
 
     private val seleccionarImagenLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) {
-            imagenUri = uri
+        uri?.let {
+            imagenUri = it
             guardarImagenYMostrar()
         }
     }
@@ -51,28 +54,38 @@ class FormularioVehiculoActivity : AppCompatActivity() {
         if (isGranted) abrirCamara() else toast(getString(R.string.error_permiso_camara))
     }
 
+    private val requestGalleryPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) abrirGaleriaInterno() else toast(getString(R.string.error_permiso_almacenamiento))
+    }
+    // --- Fin ActivityResultLaunchers ---
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityFormularioVehiculoBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        sessionManager = SessionManager(this)
 
         setupToolbar()
-        setupController()
         setupSpinners()
-        obtenerDatosIntent()
         setupListeners()
+        observeViewModel()
+        procesarIntent()
+    }
 
-        if (modoEdicion) cargarDatosVehiculo()
+    private fun procesarIntent() {
+        val id = intent.getIntExtra(EXTRA_VEHICULO_ID, -1)
+        if (id != -1) {
+            vehiculoId = id
+            viewModel.cargarVehiculoParaEdicion(id)
+            binding.btnSeleccionarImagen.gone()
+        } else {
+            supportActionBar?.title = getString(R.string.titulo_agregar)
+        }
     }
 
     private fun setupToolbar() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = if (modoEdicion) getString(R.string.titulo_editar) else getString(R.string.titulo_agregar)
-    }
-
-    private fun setupController() {
-        controller = VehiculoController(this)
     }
 
     private fun setupSpinners() {
@@ -86,31 +99,47 @@ class FormularioVehiculoActivity : AppCompatActivity() {
         binding.spinnerEstado.setAdapter(ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, estados))
     }
 
-    private fun obtenerDatosIntent() {
-        vehiculoId = intent.getLongExtra(EXTRA_VEHICULO_ID, -1)
-        modoEdicion = intent.getBooleanExtra(EXTRA_MODO_EDICION, false)
-    }
-
     private fun setupListeners() {
         binding.btnSeleccionarImagen.setOnClickListener { mostrarDialogoSeleccionImagen() }
-        binding.btnGuardar.setOnClickListener { if (validarFormulario()) guardarVehiculo() }
-        binding.btnCancelar.setOnClickListener { mostrarDialogoSalir() }
+        binding.btnGuardar.setOnClickListener { guardarVehiculo() }
+        binding.btnCancelar.setOnClickListener { finish() }
     }
 
-    private fun cargarDatosVehiculo() {
+    private fun observeViewModel() {
         lifecycleScope.launch {
-            when (val resultado = controller.obtenerVehiculoPorId(vehiculoId)) {
-                is ResultadoOperacion.Exito -> resultado.data?.let { llenarFormulario(it) }
-                is ResultadoOperacion.Error -> {
-                    toast(resultado.mensaje)
-                    finish()
+            viewModel.uiState.collectLatest {
+                when (it) {
+                    is FormularioUiState.Loading -> {
+                        binding.progressBar.visible()
+                        binding.formContainer.gone()
+                    }
+                    is FormularioUiState.Success -> {
+                        binding.progressBar.gone()
+                        binding.formContainer.visible()
+                        toast(it.message)
+                        finish()
+                    }
+                    is FormularioUiState.Error -> {
+                        binding.progressBar.gone()
+                        binding.formContainer.visible()
+                        toast("Error: ${it.message}")
+                    }
+                    is FormularioUiState.VehiculoLoaded -> {
+                        binding.progressBar.gone()
+                        binding.formContainer.visible()
+                        llenarFormulario(it.vehiculo)
+                    }
+                    is FormularioUiState.Idle -> {
+                        binding.progressBar.gone()
+                        binding.formContainer.visible()
+                    }
                 }
-                else -> {}
             }
         }
     }
 
-    private fun llenarFormulario(vehiculo: Vehiculo) {
+    private fun llenarFormulario(vehiculo: VehiculoDto) {
+        supportActionBar?.title = getString(R.string.titulo_editar)
         binding.apply {
             etMarca.setText(vehiculo.marca)
             etModelo.setText(vehiculo.modelo)
@@ -118,31 +147,107 @@ class FormularioVehiculoActivity : AppCompatActivity() {
             etPrecio.setText(vehiculo.precio.toString())
             etKilometraje.setText(vehiculo.kilometraje.toString())
             etDescripcion.setText(vehiculo.descripcion)
-            spinnerTipoVehiculo.setText(vehiculo.tipoVehiculo, false)
+            spinnerTipoVehiculo.setText(vehiculo.tipo, false)
             spinnerTransmision.setText(vehiculo.transmision, false)
             spinnerEstado.setText(vehiculo.estado, false)
-            imagenPath = vehiculo.imagenUri
-            if (vehiculo.tieneImagen()) mostrarImagenPreview()
+
+            if (vehiculo.imagenUrl != null) {
+                ivPreview.visible()
+                Glide.with(this@FormularioVehiculoActivity).load(vehiculo.imagenUrl).centerCrop().into(ivPreview)
+            }
         }
     }
+
+    private fun guardarVehiculo() {
+        if (!validarFormulario()) return
+
+        val ownerId = sessionManager.fetchUserId()
+        if (ownerId == -1) {
+            toast("Error de sesión. Por favor, reinicie la aplicación.")
+            return
+        }
+
+        val anio = binding.etAnio.text.toString().toIntOrNull()
+        val precio = binding.etPrecio.text.toString().toDoubleOrNull()
+        val kilometraje = binding.etKilometraje.text.toString().toIntOrNull()
+
+        if (anio == null || precio == null || kilometraje == null) {
+            toast("Por favor, revise los campos numéricos.")
+            return
+        }
+
+        viewModel.guardarVehiculo(
+            vehiculoId = vehiculoId,
+            marca = binding.etMarca.text.toString().trim(),
+            modelo = binding.etModelo.text.toString().trim(),
+            anio = anio,
+            precio = precio,
+            kilometraje = kilometraje,
+            descripcion = binding.etDescripcion.text.toString().trim(),
+            tipo = binding.spinnerTipoVehiculo.text.toString(),
+            transmision = binding.spinnerTransmision.text.toString(),
+            estado = binding.spinnerEstado.text.toString(),
+            ownerId = ownerId,
+            imageFile = imageFile
+        )
+    }
+
+    private fun validarFormulario(): Boolean {
+        var esValido = true
+
+        // Validación de campos de texto
+        if (binding.etMarca.text.isNullOrBlank()) {
+            binding.tilMarca.error = "La marca es requerida"
+            esValido = false
+        } else {
+            binding.tilMarca.error = null
+        }
+
+        if (binding.etModelo.text.isNullOrBlank()) {
+            binding.tilModelo.error = "El modelo es requerido"
+            esValido = false
+        } else {
+            binding.tilModelo.error = null
+        }
+        
+        // Validación de spinners
+        if (binding.spinnerTipoVehiculo.text.isNullOrBlank()) {
+            toast("Por favor, seleccione un tipo de vehículo.")
+            esValido = false
+        } 
+
+        if (binding.spinnerTransmision.text.isNullOrBlank()) {
+            toast("Por favor, seleccione un tipo de transmisión.")
+            esValido = false
+        }
+
+        if (binding.spinnerEstado.text.isNullOrBlank()) {
+            toast("Por favor, seleccione el estado del vehículo.")
+            esValido = false
+        }
+
+        // Resto de validaciones...
+
+        return esValido
+    }
+
+    // --- Manejo de Imagen ---
 
     private fun mostrarDialogoSeleccionImagen() {
         val items = resources.getStringArray(R.array.opciones_imagen)
-        val listener = DialogInterface.OnClickListener { dialog, which ->
-            when (which) {
-                0 -> verificarPermisoYAbrirCamara()
-                1 -> abrirGaleria()
-                2 -> eliminarImagen()
-            }
-        }
-
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.btn_seleccionar_imagen)
-            .setItems(items, listener)
+            .setItems(items) { _, which ->
+                when (which) {
+                    0 -> verificarPermisoCamara()
+                    1 -> verificarPermisoGaleria()
+                    2 -> eliminarImagen()
+                }
+            }
             .show()
     }
 
-    private fun verificarPermisoYAbrirCamara() {
+    private fun verificarPermisoCamara() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             abrirCamara()
         } else {
@@ -150,107 +255,65 @@ class FormularioVehiculoActivity : AppCompatActivity() {
         }
     }
 
+    private fun verificarPermisoGaleria() {
+        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_IMAGES
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+
+        if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
+            abrirGaleriaInterno()
+        } else {
+            requestGalleryPermissionLauncher.launch(permission)
+        }
+    }
+
     private fun abrirCamara() {
         try {
-            val photoFile = File.createTempFile("VEHICLE_${System.currentTimeMillis()}", ".jpg", cacheDir)
-            imagenUri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", photoFile)
+            imageFile = ImageUtils.createImageFile(this)
+            imagenUri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", imageFile!!)
             tomarFotoLauncher.launch(imagenUri)
         } catch (e: Exception) {
             toast(getString(R.string.error_abrir_camara))
         }
     }
 
-    private fun abrirGaleria() {
+    private fun abrirGaleriaInterno() {
         seleccionarImagenLauncher.launch("image/*")
     }
 
     private fun guardarImagenYMostrar() {
-        imagenUri?.let { uri ->
-            imagenPath = ImageUtils.guardarImagenEnStorage(this, uri)
-            if (imagenPath != null) {
-                mostrarImagenPreview()
-                toast(getString(R.string.msg_imagen_guardada))
+        imagenUri?.let {
+            imageFile = ImageUtils.getFileFromUri(this, it)
+            if (imageFile != null) {
+                mostrarImagenPreview(it)
+                toast(getString(R.string.msg_imagen_lista_para_subir))
             } else {
-                toast(getString(R.string.error_guardar_imagen))
+                toast(getString(R.string.error_procesar_imagen))
             }
         }
     }
 
-    private fun mostrarImagenPreview() {
+    private fun mostrarImagenPreview(uri: Uri) {
         binding.ivPreview.visible()
-        imagenPath?.let { path ->
-            Glide.with(this).load(File(path)).centerCrop().into(binding.ivPreview)
-        }
+        Glide.with(this).load(uri).centerCrop().into(binding.ivPreview)
     }
 
     private fun eliminarImagen() {
-        imagenPath?.let { ImageUtils.eliminarImagen(it) }
-        imagenPath = null
+        imageFile = null
         imagenUri = null
         binding.ivPreview.gone()
         toast(getString(R.string.msg_imagen_eliminada))
     }
-
-    private fun validarFormulario(): Boolean {
-        binding.apply {
-            ValidationUtils.validarMarca(etMarca.text.toString()).also { tilMarca.error = it }?.let { return false }
-            ValidationUtils.validarModelo(etModelo.text.toString()).also { tilModelo.error = it }?.let { return false }
-            ValidationUtils.validarAnio(etAnio.text.toString()).also { tilAnio.error = it }?.let { return false }
-            ValidationUtils.validarPrecio(etPrecio.text.toString()).also { tilPrecio.error = it }?.let { return false }
-            ValidationUtils.validarKilometraje(etKilometraje.text.toString()).also { tilKilometraje.error = it }?.let { return false }
-            ValidationUtils.validarDescripcion(etDescripcion.text.toString()).also { tilDescripcion.error = it }?.let { return false }
-            return true
-        }
-    }
-
-    private fun guardarVehiculo() {
-        val vehiculo = Vehiculo(
-            id = if (modoEdicion) vehiculoId else 0,
-            marca = binding.etMarca.text.toString().trim(),
-            modelo = binding.etModelo.text.toString().trim(),
-            anio = binding.etAnio.text.toString().toInt(),
-            precio = binding.etPrecio.text.toString().toDouble(),
-            tipoVehiculo = binding.spinnerTipoVehiculo.text.toString(),
-            kilometraje = binding.etKilometraje.text.toString().toInt(),
-            transmision = binding.spinnerTransmision.text.toString(),
-            estado = binding.spinnerEstado.text.toString(),
-            descripcion = binding.etDescripcion.text.toString().trim(),
-            imagenUri = imagenPath
-        )
-
-        lifecycleScope.launch {
-            val resultado = if (modoEdicion) controller.actualizarVehiculo(vehiculo) else controller.crearVehiculo(vehiculo)
-            when (resultado) {
-                is ResultadoOperacion.Exito -> {
-                    toast(getString(if (modoEdicion) R.string.msg_vehiculo_actualizado else R.string.msg_vehiculo_guardado))
-                    finish()
-                }
-                is ResultadoOperacion.Error -> toast(resultado.mensaje)
-                else -> {}
-            }
-        }
-    }
-
-    private fun mostrarDialogoSalir() {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.dialogo_salir_titulo)
-            .setMessage(R.string.dialogo_salir_mensaje)
-            .setPositiveButton(R.string.dialogo_salir_confirmar) { _, _ -> finish() }
-            .setNegativeButton(R.string.dialogo_salir_cancelar, null)
-            .show()
-    }
+    // --- Fin Manejo de Imagen ---
 
     override fun onSupportNavigateUp(): Boolean {
-        mostrarDialogoSalir()
+        onBackPressedDispatcher.onBackPressed()
         return true
-    }
-
-    override fun onBackPressed() {
-        mostrarDialogoSalir()
     }
 
     companion object {
         const val EXTRA_VEHICULO_ID = "vehiculo_id"
-        const val EXTRA_MODO_EDICION = "modo_edicion"
     }
 }

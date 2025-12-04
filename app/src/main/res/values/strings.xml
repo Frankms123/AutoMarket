@@ -9,6 +9,8 @@
     <string name="titulo_detalle">Detalles del Vehículo</string>
     <string name="titulo_agregar">Agregar Vehículo</string>
     <string name="titulo_editar">Editar Vehículo</string>
+    <string name="titulo_login">Iniciar Sesión</string>
+    <string name="titulo_registro">Crear Cuenta</string>
 
     <!-- BOTONES -->
     <string name="btn_agregar">Agregar</string>
@@ -22,6 +24,10 @@
     <string name="btn_aceptar">Aceptar</string>
     <string name="btn_volver">Volver</string>
     <string name="btn_compartir">Compartir</string>
+    <string name="btn_login">Iniciar Sesión</string>
+    <string name="btn_register">Registrarse</string>
+    <string name="btn_go_to_register">¿No tienes una cuenta? Regístrate</string>
+    <string name="btn_go_to_login">¿Ya tienes una cuenta? Inicia sesión</string>
 
     <!-- LABELS / ETIQUETAS -->
     <string name="label_marca">Marca</string>
@@ -35,6 +41,9 @@
     <string name="label_descripcion">Descripción</string>
     <string name="label_imagen">Imagen del Vehículo</string>
     <string name="label_fecha_publicacion">Fecha de Publicación</string>
+    <string name="label_email">Correo Electrónico</string>
+    <string name="label_password">Contraseña</string>
+    <string name="label_confirm_password">Confirmar Contraseña</string>
 
     <!-- HINTS / SUGERENCIAS -->
     <string name="hint_marca">Ej: Toyota, Honda, Ford…</string>
@@ -48,14 +57,14 @@
     <!-- ARRAYS -->
     <string-array name="tipos_vehiculo">
         <item>Sedán</item>
-        <item>SUV</item>
-        <item>Pickup</item>
-        <item>Deportivo</item>
         <item>Hatchback</item>
-        <item>Van</item>
+        <item>SUV</item>
+        <item>Camioneta</item>
+        <item>Coupé</item>
+        <item>Otro</item>
     </string-array>
     <string-array name="tipos_transmision">
-        <item>Automático</item>
+        <item>Automática</item>
         <item>Manual</item>
     </string-array>
     <string-array name="estados_vehiculo">
@@ -82,6 +91,9 @@
     <string name="msg_vehiculo_eliminado">Vehículo eliminado correctamente</string>
     <string name="msg_imagen_guardada">Imagen guardada correctamente</string>
     <string name="msg_imagen_eliminada">Imagen eliminada</string>
+    <string name="msg_login_exitoso">Inicio de sesión exitoso</string>
+    <string name="msg_registro_exitoso">¡Cuenta creada con éxito! Por favor, inicia sesión.</string>
+    <string name="msg_imagen_lista_para_subir">Imagen lista para subir</string>
 
     <!-- MENSAJES DE ERROR -->
     <string name="error_campos_vacios">Por favor completa todos los campos</string>
@@ -101,6 +113,12 @@
     <string name="error_abrir_camara">Error al abrir la cámara</string>
     <string name="error_seleccionar_imagen">Error al seleccionar la imagen</string>
     <string name="error_general">Ocurrió un error inesperado</string>
+    <string name="error_login_fallido">Email o contraseña incorrectos. Por favor, inténtalo de nuevo.</string>
+    <string name="error_email_invalido">Por favor, ingresa un correo electrónico válido.</string>
+    <string name="error_password_invalido">La contraseña no puede estar vacía.</string>
+    <string name="error_password_no_coincide">Las contraseñas no coinciden.</string>
+    <string name="error_registro_fallido">No se pudo crear la cuenta. Es posible que el correo ya esté en uso.</string>
+    <string name="error_procesar_imagen">Error al procesar la imagen seleccionada</string>
 
     <!-- DIÁLOGOS - CONFIRMACIONES -->
     <string name="dialogo_eliminar_titulo">Eliminar vehículo</string>
@@ -144,6 +162,7 @@
     <string name="menu_compartir">Compartir</string>
     <string name="menu_configuracion">Configuración</string>
     <string name="menu_acerca_de">Acerca de</string>
+    <string name="menu_logout">Cerrar Sesión</string>
 
     <!-- DETALLES DEL VEHÍCULO -->
     <string name="detalle_caracteristicas">Características</string>

@@ -53,16 +53,17 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     
-    // Room
-    implementation(libs.androidx.room.ktx)
-    kapt("androidx.room:room-compiler:2.8.3") // Corregido
-    
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation("com.google.android.material:material:1.11.0")
     
     // Glide
     implementation("com.github.bumptech.glide:glide:4.16.0")
     kapt("com.github.bumptech.glide:compiler:4.16.0")
+
+    // Networking
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

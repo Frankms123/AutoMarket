@@ -4,49 +4,43 @@ import android.content.Context
 import android.net.Uri
 import java.io.File
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 object ImageUtils {
 
     /**
-     * Guarda una imagen desde una Uri a un archivo permanente en el almacenamiento interno.
-     * @param context Contexto de la aplicación.
-     * @param uri La Uri de la imagen a guardar.
-     * @return La ruta (path) del archivo guardado, o null si falla.
+     * Crea un archivo de imagen temporal en el directorio de caché de la aplicación.
+     * Ideal para recibir la salida de la cámara.
      */
-    fun guardarImagenEnStorage(context: Context, uri: Uri): String? {
-        return try {
-            // Usar un nombre de archivo único basado en el tiempo
-            val fileName = "IMG_${System.currentTimeMillis()}.jpg"
-            val destinationFile = File(context.filesDir, fileName)
-
-            // Copiar el contenido de la Uri al archivo de destino
-            context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                FileOutputStream(destinationFile).use { outputStream ->
-                    inputStream.copyTo(outputStream)
-                }
-            }
-            destinationFile.absolutePath
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
+    fun createImageFile(context: Context): File {
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val storageDir: File? = context.cacheDir
+        return File.createTempFile(
+            "JPEG_${timeStamp}_",
+            ".jpg",
+            storageDir
+        )
     }
 
     /**
-     * Elimina un archivo de imagen del almacenamiento interno.
-     * @param imagePath La ruta del archivo a eliminar.
+     * Copia el contenido de una Uri (generalmente de la galería) a un nuevo archivo temporal.
+     * Esto es necesario porque no podemos enviar directamente una Uri de contenido a Retrofit.
+     * @return Un objeto File que apunta al archivo copiado, o null si falla.
      */
-    fun eliminarImagen(imagePath: String): Boolean {
+    fun getFileFromUri(context: Context, uri: Uri): File? {
         return try {
-            val file = File(imagePath)
-            if (file.exists()) {
-                file.delete()
-            } else {
-                false
+            val tempFile = createImageFile(context)
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                FileOutputStream(tempFile).use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
             }
+            tempFile
         } catch (e: Exception) {
             e.printStackTrace()
-            false
+            null
         }
     }
 }
