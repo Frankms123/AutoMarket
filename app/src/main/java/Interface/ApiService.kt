@@ -54,6 +54,7 @@ interface ApiService {
 
     @DELETE("vehiculos/{id}")
     suspend fun deleteVehicle(
-        @Path("id") vehicleId: Int
+        @Path("id") vehicleId: Int,
+        @Query("owner_id") ownerId: Int
     ): Response<Unit>
 }

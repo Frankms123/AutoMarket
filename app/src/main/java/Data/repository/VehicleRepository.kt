@@ -77,23 +77,25 @@ class VehicleRepository {
         description: String,
         type: String,
         transmission: String,
-        condition: String
+        condition: String,
+        ownerId: Int
     ): Response<VehicleDto> {
         val payload = mapOf(
-            "brand" to brand,
-            "model" to model,
-            "year" to year,
-            "price" to price,
-            "mileage" to mileage,
-            "description" to description,
-            "type" to type,
-            "transmission" to transmission,
-            "condition" to condition
+            "marca" to brand,
+            "modelo" to model,
+            "anio" to year,
+            "precio" to price,
+            "kilometraje" to mileage,
+            "descripcion" to description,
+            "tipo" to type,
+            "transmision" to transmission,
+            "estado" to condition,
+            "owner_id" to ownerId
         )
         return apiService.updateVehicle(vehicleId, payload)
     }
 
-    suspend fun deleteVehicle(vehicleId: Int): Response<Unit> {
-        return apiService.deleteVehicle(vehicleId)
+    suspend fun deleteVehicle(vehicleId: Int, ownerId: Int): Response<Unit> {
+        return apiService.deleteVehicle(vehicleId, ownerId)
     }
 }

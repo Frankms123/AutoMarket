@@ -34,6 +34,7 @@ class VehicleDetailActivity : AppCompatActivity() {
     private val activityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             viewModel.loadVehicleDetails(vehicleId)
+            setResult(Activity.RESULT_OK)
         }
     }
 
@@ -58,6 +59,17 @@ class VehicleDetailActivity : AppCompatActivity() {
             title = getString(R.string.title_detail)
             setDisplayHomeAsUpEnabled(true)
         }
+
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (viewModel.uiState.value is DetailUiState.ShowUndoDelete) {
+                    viewModel.confirmDeletion()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
     }
 
     private fun getVehicleId() {
@@ -82,12 +94,11 @@ class VehicleDetailActivity : AppCompatActivity() {
                     }
                     is DetailUiState.Error -> {
                         toast("Error: ${it.message}")
-                        finish()
                     }
                     is DetailUiState.Deleted -> {
                         toast(getString(R.string.msg_vehicle_deleted))
-                        setResult(RESULT_OK)
-                        finish()
+                        setResult(Activity.RESULT_OK) // Notify MainActivity
+                        finish() // Close the detail screen
                     }
                     is DetailUiState.ShowUndoDelete -> {
                         binding.root.showSnackbarWithAction(getString(R.string.msg_vehicle_deleted), getString(R.string.btn_undo)) {

@@ -14,8 +14,8 @@ sealed class DetailUiState {
     object Loading : DetailUiState()
     data class Success(val vehicle: VehicleDto) : DetailUiState()
     data class Error(val message: String) : DetailUiState()
-    object Deleted : DetailUiState()
     data class ShowUndoDelete(val vehicle: VehicleDto) : DetailUiState()
+    object Deleted : DetailUiState()
 }
 
 class VehicleDetailViewModel : ViewModel() {
@@ -48,9 +48,10 @@ class VehicleDetailViewModel : ViewModel() {
 
     fun confirmDeletion() {
         vehicleToDelete?.let {
+            vehicleToDelete = null // Prevent double execution
             viewModelScope.launch {
                 _uiState.value = DetailUiState.Loading
-                when (val resource = safeApiCall { vehicleRepository.deleteVehicle(it.id) }) {
+                when (val resource = safeApiCall(allowEmptyBody = true) { vehicleRepository.deleteVehicle(it.id, it.ownerId) }) {
                     is Resource.Success -> {
                         _uiState.value = DetailUiState.Deleted
                     }

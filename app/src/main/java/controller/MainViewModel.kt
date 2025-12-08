@@ -47,7 +47,7 @@ class MainViewModel : ViewModel() {
             if (isInitialLoad) {
                 _uiState.value = MainUiState.Loading
             }
-            when (val resource = safeApiCall { vehicleRepository.getVehicles() }) {
+            when (val resource = safeApiCall { vehicleRepository.getVehicles(limit = 100) }) {
                 is Resource.Success -> {
                     masterVehicleList = resource.data ?: emptyList()
                     _updateList()

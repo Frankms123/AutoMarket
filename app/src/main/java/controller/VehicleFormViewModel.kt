@@ -55,7 +55,7 @@ class VehicleFormViewModel : ViewModel() {
         imageFile: File?
     ) {
         if (vehicleId != null) {
-            updateVehicle(vehicleId, brand, model, year, price, mileage, description, type, transmission, condition)
+            updateVehicle(vehicleId, brand, model, year, price, mileage, description, type, transmission, condition, ownerId)
         } else {
             createVehicle(brand, model, year, price, mileage, description, type, transmission, condition, ownerId, imageFile)
         }
@@ -88,12 +88,12 @@ class VehicleFormViewModel : ViewModel() {
 
     private fun updateVehicle(
         vehicleId: Int, brand: String, model: String, year: Int, price: Double, mileage: Int, 
-        description: String, type: String, transmission: String, condition: String
+        description: String, type: String, transmission: String, condition: String, ownerId: Int
     ) {
         viewModelScope.launch {
             _uiState.value = FormUiState.Loading
             val resource = safeApiCall {
-                vehicleRepository.updateVehicle(vehicleId, brand, model, year, price, mileage, description, type, transmission, condition)
+                vehicleRepository.updateVehicle(vehicleId, brand, model, year, price, mileage, description, type, transmission, condition, ownerId)
             }
             when (resource) {
                 is Resource.Success -> {
