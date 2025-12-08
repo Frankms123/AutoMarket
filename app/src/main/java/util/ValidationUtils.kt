@@ -1,51 +1,49 @@
 package util
 
-import util.Constants
-
 object ValidationUtils {
 
-    fun validarMarca(marca: String): String? {
-        if (marca.isBlank()) return "La marca es obligatoria"
-        if (marca.length < 2) return "La marca debe tener al menos 2 caracteres"
+    fun validateBrand(brand: String): String? {
+        if (brand.isBlank()) return "Brand is required"
         return null
     }
 
-    fun validarModelo(modelo: String): String? {
-        if (modelo.isBlank()) return "El modelo es obligatorio"
-        if (modelo.length < 2) return "El modelo debe tener al menos 2 caracteres"
+    fun validateModel(model: String): String? {
+        if (model.isBlank()) return "Model is required"
+        if (model.length < 2) return "Model must be at least 2 characters long"
         return null
     }
 
-    fun validarAnio(anioStr: String): String? {
-        if (anioStr.isBlank()) return "El año es obligatorio"
-        val anio = anioStr.toIntOrNull()
-        if (anio == null || anio !in Constants.MIN_YEAR..Constants.MAX_YEAR) {
-            return "El año debe estar entre ${Constants.MIN_YEAR} y ${Constants.MAX_YEAR}"
+    fun validateYear(yearStr: String): String? {
+        if (yearStr.isBlank()) return "Year is required"
+        val year = yearStr.toIntOrNull()
+        if (year == null || year !in Constants.MIN_YEAR..Constants.MAX_YEAR) {
+            return "Year must be between ${Constants.MIN_YEAR} and ${Constants.MAX_YEAR}"
         }
         return null
     }
 
-    fun validarPrecio(precioStr: String): String? {
-        if (precioStr.isBlank()) return "El precio es obligatorio"
-        val precio = precioStr.toDoubleOrNull()
-        if (precio == null || precio <= 0) {
-            return "El precio debe ser mayor a 0"
+    fun validatePrice(priceStr: String): String? {
+        if (priceStr.isBlank()) return "Price is required"
+        val price = priceStr.toDoubleOrNull()
+        if (price == null || price <= 0) {
+            return "Price must be greater than 0"
         }
         return null
     }
 
-    fun validarKilometraje(kmStr: String): String? {
-        if (kmStr.isBlank()) return "El kilometraje es obligatorio"
-        val km = kmStr.toIntOrNull()
-        if (km == null || km < 0) {
-            return "El kilometraje no puede ser negativo"
+    fun validateMileage(mileageStr: String): String? {
+        if (mileageStr.isBlank()) return "Mileage is required"
+        val mileage = mileageStr.toIntOrNull()
+        if (mileage == null || mileage < 0) {
+            return "Mileage can't be negative"
         }
         return null
     }
 
-    fun validarDescripcion(descripcion: String): String? {
-        if (descripcion.isBlank()) return "La descripción es obligatoria"
-        if (descripcion.length < 10) return "La descripción debe tener al menos 10 caracteres"
+    fun validateDescription(description: String): String? {
+        if (description.length < 10) {
+            return "Description must be at least 10 characters long"
+        }
         return null
     }
 }

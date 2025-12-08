@@ -10,7 +10,6 @@ object Constants {
     const val MIN_PRICE = 0.0
     const val MIN_KILOMETRAJE = 0
 
-    // Image
     const val MAX_IMAGE_SIZE_MB = 5
     const val IMAGE_QUALITY = 85
 

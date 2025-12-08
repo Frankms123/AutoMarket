@@ -6,11 +6,11 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.Frank.automarket.MainActivity
-import com.Frank.automarket.data.session.SessionManager
+import data.session.SessionManager
 import com.Frank.automarket.databinding.ActivityRegisterBinding
-import util.toast
-import util.gone
-import util.visible
+import controller.RegisterViewModel
+import controller.RegisterUiState
+import util.*
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -22,15 +22,10 @@ class RegisterActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        sessionManager = SessionManager(this)
-
-        if (sessionManager.fetchUserId() != -1) {
-            navigateToMainApp()
-            return
-        }
-
         binding = ActivityRegisterBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        sessionManager = SessionManager(this)
 
         setupListeners()
         observeViewModel()
@@ -44,7 +39,9 @@ class RegisterActivity : AppCompatActivity() {
             viewModel.register(email, password, confirmPassword)
         }
 
-        binding.btnGoToLogin.gone()
+        binding.btnGoToLogin.setOnClickListener {
+            finish()
+        }
     }
 
     private fun observeViewModel() {
@@ -58,9 +55,8 @@ class RegisterActivity : AppCompatActivity() {
                     is RegisterUiState.Success -> {
                         binding.progressBar.gone()
                         binding.btnRegister.isEnabled = true
-                        sessionManager.saveUserId(it.user.id)
-                        toast(getString(com.Frank.automarket.R.string.msg_registro_exitoso))
-                        navigateToMainApp()
+                        toast(getString(com.Frank.automarket.R.string.msg_registration_successful))
+                        finish()
                     }
                     is RegisterUiState.Error -> {
                         binding.progressBar.gone()
@@ -74,13 +70,5 @@ class RegisterActivity : AppCompatActivity() {
                 }
             }
         }
-    }
-
-    private fun navigateToMainApp() {
-        val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-        startActivity(intent)
-        finish()
     }
 }

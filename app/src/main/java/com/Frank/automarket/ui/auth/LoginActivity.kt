@@ -6,11 +6,11 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.Frank.automarket.MainActivity
-import com.Frank.automarket.data.session.SessionManager
+import data.session.SessionManager
 import com.Frank.automarket.databinding.ActivityLoginBinding
-import util.toast
-import util.gone
-import util.visible
+import controller.LoginViewModel
+import controller.LoginUiState
+import util.*
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -27,7 +27,6 @@ class LoginActivity : AppCompatActivity() {
 
         sessionManager = SessionManager(this)
 
-        // Si ya hay una sesión activa, ir directamente a la app
         if (sessionManager.fetchUserId() != -1) {
             navigateToMainApp()
             return

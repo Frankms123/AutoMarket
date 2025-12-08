@@ -1,30 +1,46 @@
 package com.Frank.automarket
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.ArrayAdapter
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
-import com.Frank.automarket.data.session.SessionManager
 import com.Frank.automarket.databinding.ActivityMainBinding
+import com.Frank.automarket.databinding.DialogFilterBinding
+import com.Frank.automarket.ui.adapters.VehicleAdapter
 import com.Frank.automarket.ui.auth.LoginActivity
-import com.Frank.automarket.ui.main.MainUiState
-import com.Frank.automarket.ui.main.MainViewModel
-import com.Frank.automarket.ui.main.VehiculoAdapter
-import util.*
+import controller.MainUiState
+import controller.MainViewModel
+import controller.SortOrder
+import data.session.SessionManager
+import entity.VehicleDto
+import entity.VehicleFilter
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import util.*
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private val viewModel: MainViewModel by viewModels()
-    private lateinit var adapter: VehiculoAdapter
+    private lateinit var vehicleAdapter: VehicleAdapter
     private lateinit var sessionManager: SessionManager
+    private var lastFilter: VehicleFilter? = null
+
+    private val activityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            viewModel.loadVehicles()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,34 +53,32 @@ class MainActivity : AppCompatActivity() {
         setupRecyclerView()
         setupListeners()
         observeViewModel()
-
-        viewModel.cargarVehiculos()
     }
 
     private fun setupToolbar() {
         setSupportActionBar(binding.toolbar)
-        supportActionBar?.title = getString(R.string.titulo_lista)
+        supportActionBar?.title = getString(R.string.title_list)
     }
 
     private fun setupRecyclerView() {
-        adapter = VehiculoAdapter { vehiculo ->
-            val intent = Intent(this, DetalleVehiculoActivity::class.java).apply {
-                putExtra(DetalleVehiculoActivity.EXTRA_VEHICULO_ID, vehiculo.id)
+        vehicleAdapter = VehicleAdapter { vehicle: VehicleDto ->
+            val intent = Intent(this, VehicleDetailActivity::class.java).apply {
+                putExtra(VehicleDetailActivity.EXTRA_VEHICLE_ID, vehicle.id)
             }
-            startActivity(intent)
+            activityLauncher.launch(intent)
         }
 
-        binding.rvVehiculos.apply {
+        binding.rvVehicles.apply {
             layoutManager = GridLayoutManager(this@MainActivity, 2)
-            adapter = this@MainActivity.adapter
+            adapter = this@MainActivity.vehicleAdapter
             setHasFixedSize(true)
         }
     }
 
     private fun setupListeners() {
-        binding.fabAgregar.setOnClickListener {
-            val intent = Intent(this, FormularioVehiculoActivity::class.java)
-            startActivity(intent)
+        binding.fabAdd.setOnClickListener {
+            val intent = Intent(this, VehicleFormActivity::class.java)
+            activityLauncher.launch(intent)
         }
     }
 
@@ -74,70 +88,165 @@ class MainActivity : AppCompatActivity() {
                 when (state) {
                     is MainUiState.Loading -> {
                         binding.progressBar.visible()
-                        binding.rvVehiculos.gone()
+                        binding.rvVehicles.gone()
                         binding.layoutEmpty.root.gone()
                     }
                     is MainUiState.Success -> {
                         binding.progressBar.gone()
-                        if (state.vehiculos.isEmpty()) {
-                            mostrarEstadoVacio(getString(R.string.empty_state_titulo), getString(R.string.empty_state_mensaje))
+                        if (state.vehicles.isEmpty()) {
+                            val isSearchingOrFiltering = state.filter.hasActiveFilters() || viewModel.searchQuery.isNotEmpty()
+                            val emptyTitle = if (isSearchingOrFiltering) getString(R.string.empty_state_search) else getString(R.string.empty_state_title)
+                            val emptyMessage = if (isSearchingOrFiltering) getString(R.string.empty_state_search_message) else getString(R.string.empty_state_message)
+                            showEmptyState(emptyTitle, emptyMessage)
                         } else {
-                            mostrarLista()
-                            adapter.submitList(state.vehiculos)
+                            showList()
+                            vehicleAdapter.submitList(state.vehicles)
+                        }
+                        if (state.filter != lastFilter) {
+                            lastFilter = state.filter
+                            invalidateOptionsMenu()
                         }
                     }
                     is MainUiState.Error -> {
                         binding.progressBar.gone()
-                        mostrarEstadoVacio("Error", state.message)
+                        showEmptyState("Error", state.message)
                     }
                 }
             }
         }
     }
 
-    private fun mostrarEstadoVacio(titulo: String, mensaje: String) {
+    private fun showFilterDialog() {
+        val dialogBinding = DialogFilterBinding.inflate(LayoutInflater.from(this))
+        val currentState = viewModel.uiState.value
+        val filter = if (currentState is MainUiState.Success) currentState.filter else VehicleFilter()
+
+        // Setup spinners
+        val vehicleTypes = resources.getStringArray(R.array.vehicle_types)
+        dialogBinding.spinnerVehicleType.setAdapter(ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, vehicleTypes))
+
+        val transmissionTypes = resources.getStringArray(R.array.transmission_types)
+        dialogBinding.spinnerTransmission.setAdapter(ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, transmissionTypes))
+
+        val conditions = resources.getStringArray(R.array.vehicle_conditions)
+        dialogBinding.spinnerCondition.setAdapter(ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, conditions))
+
+        // Set current filter values
+        dialogBinding.etMinPrice.setText(filter.minPrice?.toString())
+        dialogBinding.etMaxPrice.setText(filter.maxPrice?.toString())
+        dialogBinding.etMinYear.setText(filter.minYear?.toString())
+        dialogBinding.etMaxYear.setText(filter.maxYear?.toString())
+        dialogBinding.etMaxMileage.setText(filter.maxMileage?.toString())
+        dialogBinding.spinnerVehicleType.setText(filter.vehicleType, false)
+        dialogBinding.spinnerTransmission.setText(filter.transmission, false)
+        dialogBinding.spinnerCondition.setText(filter.condition, false)
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(R.string.title_filters)
+            .setView(dialogBinding.root)
+            .setPositiveButton(R.string.btn_apply) { _, _ ->
+                val newFilter = VehicleFilter(
+                    vehicleType = dialogBinding.spinnerVehicleType.text.toString().takeIf { it.isNotBlank() },
+                    minPrice = dialogBinding.etMinPrice.text.toString().toDoubleOrNull(),
+                    maxPrice = dialogBinding.etMaxPrice.text.toString().toDoubleOrNull(),
+                    minYear = dialogBinding.etMinYear.text.toString().toIntOrNull(),
+                    maxYear = dialogBinding.etMaxYear.text.toString().toIntOrNull(),
+                    maxMileage = dialogBinding.etMaxMileage.text.toString().toIntOrNull(),
+                    transmission = dialogBinding.spinnerTransmission.text.toString().takeIf { it.isNotBlank() },
+                    condition = dialogBinding.spinnerCondition.text.toString().takeIf { it.isNotBlank() }
+                )
+                viewModel.applyFilters(newFilter)
+            }
+            .setNegativeButton(R.string.btn_cancel, null)
+            .setNeutralButton(R.string.btn_clear) { _, _ ->
+                viewModel.applyFilters(filter.clear())
+            }
+            .create()
+
+        dialog.show()
+    }
+
+    private fun showEmptyState(title: String, message: String) {
         binding.apply {
-            rvVehiculos.gone()
+            rvVehicles.gone()
             layoutEmpty.root.visible()
-            layoutEmpty.tvEmptyTitle.text = titulo
-            layoutEmpty.tvEmptyMessage.text = mensaje
+            layoutEmpty.tvEmptyTitle.text = title
+            layoutEmpty.tvEmptyMessage.text = message
         }
     }
 
-    private fun mostrarLista() {
+    private fun showList() {
         binding.apply {
             layoutEmpty.root.gone()
-            rvVehiculos.visible()
+            rvVehicles.visible()
         }
+    }
+
+    private fun setupSearchView(menu: Menu) {
+        val searchItem = menu.findItem(R.id.action_search)
+        val searchView = searchItem.actionView as SearchView
+
+        searchView.queryHint = getString(R.string.hint_search)
+
+        if (viewModel.searchQuery.isNotEmpty()) {
+            searchItem.expandActionView()
+            searchView.setQuery(viewModel.searchQuery, false) 
+        }
+
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                return false 
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                if (newText.isNullOrEmpty() && !searchItem.isActionViewExpanded) {
+                    return true
+                }
+                viewModel.searchVehicles(newText.orEmpty())
+                return true
+            }
+        })
+
+        searchItem.setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
+            override fun onMenuItemActionExpand(item: MenuItem): Boolean = true
+
+            override fun onMenuItemActionCollapse(item: MenuItem): Boolean {
+                // viewModel.searchVehicles("") // Keep the filter active even if collapsed
+                return true
+            }
+        })
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
-
-        val searchItem = menu.findItem(R.id.action_search)
-        val searchView = searchItem.actionView as SearchView
-
-        searchView.apply {
-            queryHint = getString(R.string.hint_buscar)
-            setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-                override fun onQueryTextSubmit(query: String?): Boolean = false
-                override fun onQueryTextChange(newText: String?): Boolean {
-                    viewModel.buscarVehiculos(newText.orEmpty())
-                    return true
-                }
-            })
-        }
+        setupSearchView(menu)
         return true
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_logout -> { 
-                logout()
-                true 
-            }
-            else -> super.onOptionsItemSelected(item)
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        val filterItem = menu.findItem(R.id.action_filter)
+        val currentState = viewModel.uiState.value
+        if (currentState is MainUiState.Success && currentState.filter.hasActiveFilters()) {
+            filterItem.setIcon(R.drawable.ic_filter_list_off)
+        } else {
+            filterItem.setIcon(android.R.drawable.ic_menu_sort_by_size)
         }
+        return super.onPrepareOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.action_logout -> logout()
+            R.id.action_filter -> showFilterDialog()
+            R.id.action_sort_price_asc -> viewModel.sortVehicles(SortOrder.PRICE_ASC)
+            R.id.action_sort_price_desc -> viewModel.sortVehicles(SortOrder.PRICE_DESC)
+            R.id.action_sort_year_desc -> viewModel.sortVehicles(SortOrder.YEAR_DESC)
+            R.id.action_sort_year_asc -> viewModel.sortVehicles(SortOrder.YEAR_ASC)
+            R.id.action_sort_km_asc -> viewModel.sortVehicles(SortOrder.MILEAGE_ASC)
+            R.id.action_sort_km_desc -> viewModel.sortVehicles(SortOrder.MILEAGE_DESC)
+            else -> return super.onOptionsItemSelected(item)
+        }
+        return true
     }
 
     private fun logout() {
@@ -147,10 +256,5 @@ class MainActivity : AppCompatActivity() {
         }
         startActivity(intent)
         finish()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        viewModel.cargarVehiculos()
     }
 }

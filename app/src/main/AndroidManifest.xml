@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.Frank.automarket">
 
-    <!-- Permisos de Red, Cámara y Galería -->
+    <!-- Network, Camera, and Gallery Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
@@ -19,7 +19,7 @@
         android:theme="@style/Theme.AutoMarket"
         android:usesCleartextTraffic="true">
 
-        <!-- Actividad de Login (Nuevo Punto de Entrada) -->
+        <!-- Login Activity (New Entry Point) -->
         <activity
             android:name=".ui.auth.LoginActivity"
             android:exported="true"
@@ -35,20 +35,20 @@
             android:exported="false"
             android:theme="@style/Theme.AutoMarket.NoActionBar" />
 
-        <!-- Actividades Principales -->
+        <!-- Main Activities -->
         <activity
             android:name=".MainActivity"
             android:exported="false" />
 
         <activity
-            android:name=".DetalleVehiculoActivity"
+            android:name=".VehicleDetailActivity"
             android:exported="false" />
 
         <activity
-            android:name=".FormularioVehiculoActivity"
+            android:name=".VehicleFormActivity"
             android:exported="false" />
 
-        <!-- FileProvider para la cámara -->
+        <!-- FileProvider for Camera -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

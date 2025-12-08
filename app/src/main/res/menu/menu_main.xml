@@ -5,21 +5,41 @@
     <item
         android:id="@+id/action_search"
         android:icon="@android:drawable/ic_menu_search"
-        android:title="@string/menu_buscar"
+        android:title="@string/menu_search"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         app:showAsAction="ifRoom|collapseActionView" />
 
     <item
         android:id="@+id/action_filter"
         android:icon="@android:drawable/ic_menu_sort_by_size" 
-        android:title="@string/menu_filtrar"
+        android:title="@string/menu_filter"
         app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/action_sort"
-        android:icon="@android:drawable/ic_menu_sort_alphabetically"
-        android:title="@string/menu_ordenar"
-        app:showAsAction="never" />
+        android:title="@string/menu_sort"
+        app:showAsAction="never">
+        <menu>
+            <item
+                android:id="@+id/action_sort_price_asc"
+                android:title="@string/sort_price_lowest" />
+            <item
+                android:id="@+id/action_sort_price_desc"
+                android:title="@string/sort_price_highest" />
+            <item
+                android:id="@+id/action_sort_year_desc"
+                android:title="@string/sort_year_newest" />
+            <item
+                android:id="@+id/action_sort_year_asc"
+                android:title="@string/sort_year_oldest" />
+            <item
+                android:id="@+id/action_sort_km_asc"
+                android:title="@string/sort_mileage_lowest" />
+            <item
+                android:id="@+id/action_sort_km_desc"
+                android:title="@string/sort_mileage_highest" />
+        </menu>
+    </item>
         
     <item
         android:id="@+id/action_logout"
