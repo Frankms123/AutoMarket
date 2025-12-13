@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.AutoMarket" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.AutoMarket" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Tema principal de la aplicación -->
+    </style>
+
+    <!-- Tema para actividades que no deben tener un ActionBar/Toolbar gestionado por el tema -->
+    <style name="Theme.AutoMarket.NoActionBar" parent="Theme.AutoMarket" />
+
 </resources>
