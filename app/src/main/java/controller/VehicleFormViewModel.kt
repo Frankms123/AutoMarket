@@ -1,43 +1,18 @@
 package controller
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import data.repository.VehicleRepository
 import entity.VehicleDto
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
-import util.Resource
-import util.safeApiCall
 import java.io.File
 
-sealed class FormUiState {
-    object Idle : FormUiState()
-    object Loading : FormUiState()
-    data class Success(val message: String) : FormUiState()
-    data class Error(val message: String) : FormUiState()
-    data class VehicleLoaded(val vehicle: VehicleDto) : FormUiState()
-}
-
-class VehicleFormViewModel : ViewModel() {
+class VehicleFormViewModel : BaseViewModel<VehicleDto>() {
 
     private val vehicleRepository = VehicleRepository()
 
-    private val _uiState = MutableStateFlow<FormUiState>(FormUiState.Idle)
-    val uiState: StateFlow<FormUiState> = _uiState
-
     fun loadVehicleForEditing(vehicleId: Int) {
-        viewModelScope.launch {
-            _uiState.value = FormUiState.Loading
-            when (val resource = safeApiCall { vehicleRepository.getVehicleById(vehicleId) }) {
-                is Resource.Success -> {
-                    _uiState.value = FormUiState.VehicleLoaded(resource.data!!)
-                }
-                is Resource.Error -> {
-                    _uiState.value = FormUiState.Error(resource.message ?: "Error loading vehicle data.")
-                }
-            }
-        }
+        executeLoadCall(
+            apiCall = { vehicleRepository.getVehicleById(vehicleId) },
+            errorMessage = "Error loading vehicle data."
+        )
     }
 
     fun saveVehicle(
@@ -51,7 +26,7 @@ class VehicleFormViewModel : ViewModel() {
         type: String,
         transmission: String,
         condition: String,
-        ownerId: Int, 
+        ownerId: Int,
         imageFile: File?
     ) {
         if (vehicleId != null) {
@@ -62,47 +37,29 @@ class VehicleFormViewModel : ViewModel() {
     }
 
     private fun createVehicle(
-        brand: String, model: String, year: Int, price: Double, mileage: Int, 
-        description: String, type: String, transmission: String, condition: String, 
+        brand: String, model: String, year: Int, price: Double, mileage: Int,
+        description: String, type: String, transmission: String, condition: String,
         ownerId: Int, imageFile: File?
     ) {
         if (imageFile == null) {
-            _uiState.value = FormUiState.Error("Please select an image for the vehicle.")
+            _uiState.value = UiState.Error("Please select an image for the vehicle.")
             return
         }
-        viewModelScope.launch {
-            _uiState.value = FormUiState.Loading
-            val resource = safeApiCall {
-                vehicleRepository.createVehicle(brand, model, year, price, mileage, description, type, transmission, condition, ownerId, imageFile)
-            }
-            when (resource) {
-                is Resource.Success -> {
-                    _uiState.value = FormUiState.Success("Vehicle created successfully!")
-                }
-                is Resource.Error -> {
-                    _uiState.value = FormUiState.Error(resource.message ?: "Error creating vehicle.")
-                }
-            }
-        }
+        executeActionCall(
+            apiCall = { vehicleRepository.createVehicle(brand, model, year, price, mileage, description, type, transmission, condition, ownerId, imageFile) },
+            successMessage = "Vehicle created successfully!",
+            errorMessage = "Error creating vehicle."
+        )
     }
 
     private fun updateVehicle(
-        vehicleId: Int, brand: String, model: String, year: Int, price: Double, mileage: Int, 
+        vehicleId: Int, brand: String, model: String, year: Int, price: Double, mileage: Int,
         description: String, type: String, transmission: String, condition: String, ownerId: Int
     ) {
-        viewModelScope.launch {
-            _uiState.value = FormUiState.Loading
-            val resource = safeApiCall {
-                vehicleRepository.updateVehicle(vehicleId, brand, model, year, price, mileage, description, type, transmission, condition, ownerId)
-            }
-            when (resource) {
-                is Resource.Success -> {
-                    _uiState.value = FormUiState.Success("Vehicle updated successfully!")
-                }
-                is Resource.Error -> {
-                    _uiState.value = FormUiState.Error(resource.message ?: "Error updating vehicle.")
-                }
-            }
-        }
+        executeActionCall(
+            apiCall = { vehicleRepository.updateVehicle(vehicleId, brand, model, year, price, mileage, description, type, transmission, condition, ownerId) },
+            successMessage = "Vehicle updated successfully!",
+            errorMessage = "Error updating vehicle."
+        )
     }
 }

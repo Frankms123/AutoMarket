@@ -40,10 +40,4 @@ object ValidationUtils {
         return null
     }
 
-    fun validateDescription(description: String): String? {
-        if (description.length < 10) {
-            return "Description must be at least 10 characters long"
-        }
-        return null
-    }
 }

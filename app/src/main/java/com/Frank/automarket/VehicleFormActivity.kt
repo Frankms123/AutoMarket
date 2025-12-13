@@ -16,7 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.Frank.automarket.databinding.ActivityVehicleFormBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import controller.FormUiState
+import controller.UiState
 import controller.VehicleFormViewModel
 import data.network.ApiClient
 import data.session.SessionManager
@@ -105,28 +105,28 @@ class VehicleFormActivity : AppCompatActivity() {
         lifecycleScope.launch {
             viewModel.uiState.collectLatest {
                 when (it) {
-                    is FormUiState.Loading -> {
+                    is UiState.Loading -> {
                         binding.progressBar.visible()
                         binding.formContainer.gone()
                     }
-                    is FormUiState.Success -> {
+                    is UiState.SuccessMessage -> {
                         binding.progressBar.gone()
                         binding.formContainer.visible()
                         toast(it.message)
                         setResult(Activity.RESULT_OK)
                         finish()
                     }
-                    is FormUiState.Error -> {
+                    is UiState.Error -> {
                         binding.progressBar.gone()
                         binding.formContainer.visible()
                         toast("Error: ${it.message}")
                     }
-                    is FormUiState.VehicleLoaded -> {
+                    is UiState.Success -> {
                         binding.progressBar.gone()
                         binding.formContainer.visible()
-                        fillForm(it.vehicle)
+                        fillForm(it.data)
                     }
-                    is FormUiState.Idle -> {
+                    is UiState.Idle -> {
                         binding.progressBar.gone()
                         binding.formContainer.visible()
                     }

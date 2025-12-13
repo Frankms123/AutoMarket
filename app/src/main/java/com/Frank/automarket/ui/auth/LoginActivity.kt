@@ -6,13 +6,15 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.Frank.automarket.MainActivity
-import data.session.SessionManager
 import com.Frank.automarket.databinding.ActivityLoginBinding
 import controller.LoginViewModel
-import controller.LoginUiState
-import util.*
+import controller.UiState
+import data.session.SessionManager
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import util.gone
+import util.toast
+import util.visible
 
 class LoginActivity : AppCompatActivity() {
 
@@ -53,20 +55,23 @@ class LoginActivity : AppCompatActivity() {
         lifecycleScope.launch {
             viewModel.uiState.collectLatest {
                 when (it) {
-                    is LoginUiState.Loading -> {
+                    is UiState.Loading -> {
                         binding.progressBar.visible()
                     }
-                    is LoginUiState.Success -> {
+                    is UiState.Success -> {
                         binding.progressBar.gone()
-                        sessionManager.saveUserId(it.user.id)
+                        sessionManager.saveUserId(it.data.id)
                         toast("¡Inicio de sesión exitoso!")
                         navigateToMainApp()
                     }
-                    is LoginUiState.Error -> {
+                    is UiState.Error -> {
                         binding.progressBar.gone()
                         toast("Error: ${it.message}")
                     }
-                    is LoginUiState.Idle -> {
+                    is UiState.Idle -> {
+                        binding.progressBar.gone()
+                    }
+                    else -> {
                         binding.progressBar.gone()
                     }
                 }
